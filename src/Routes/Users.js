@@ -1,23 +1,39 @@
 import React, { useEffect, useRef, useState } from "react";
 import UserContainer from "../components/UserContainer";
+import Loading from "../components/Loading";
 
 const Users = () => {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(null);
   const BaseUrl = "https://api.github.com/users";
   const user = useRef("");
 
   async function AllUsers() {
-    const res = await fetch(BaseUrl);
-    const data = await res.json();
-    setUsers(data);
+    if (user.current.value === "") {
+      setLoading(true);
+      const res = await fetch(BaseUrl);
+      const data = await res.json();
+      setUsers(data);
+      setLoading(null);
+    }
   }
 
   async function FindUser() {
-    console.log(user.current.value);
+    setLoading(true);
+    if (user.current.value !== "") {
+      setUsers("");
+      const res = await fetch(BaseUrl + "/" + user.current.value);
+      const data = await res.json();
+      setUsers(() => [data]);
+      user.current.value = "";
+    } else {
+      AllUsers();
+    }
+    setLoading(null);
   }
   useEffect(() => {
     AllUsers();
-  }, [setUsers]);
+  }, [ setUsers]);
   return (
     <div>
       <div className="flex justify-center items-center h-11 my-5 ">
@@ -34,7 +50,7 @@ const Users = () => {
           Search
         </button>
       </div>
-      <UserContainer users={users} />
+      <div> { loading ? <Loading /> : <UserContainer users={users} />} </div>
     </div>
   );
 };

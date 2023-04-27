@@ -1,20 +1,39 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import Tabs from "../components/Tab";
+import Repo from "../components/Repo";
+import Events from "../components/Events";
+import UserContainer from "../components/UserContainer";
+import Loading from "../components/Loading";
 
 const UserInfo = () => {
   const [user, setUser] = useState([]);
+  const [type, setType] = useState("repos");
+  const [info, setInfo] = useState([]);
+  const [loading, setLoading] = useState(null);
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const BaseUrl = "https://api.github.com/users";
 
   async function GetUserInfo() {
+    setLoading(true);
     const res = await fetch(BaseUrl + pathname);
     const data = await res.json();
     setUser(() => [data]);
+    setLoading(null);
+  }
+  async function GetUrls() {
+    setUser([]);
+    setLoading(true);
+    const res = await fetch(BaseUrl + pathname + `/${type}`);
+    const data = await res.json();
+    setInfo(data);
+    setLoading(null);
   }
   useEffect(() => {
     GetUserInfo();
-  }, [pathname]);
+    GetUrls();
+  }, [pathname, type]);
   return (
     <div className="py-5 ">
       <button
@@ -66,11 +85,25 @@ const UserInfo = () => {
             </div>
           </div>
         ))}
-      <div className="flex border-b pb-4 gap-6 mb-6 mt-[10%]">
-        <button>Repositories</button>
-        <button>Activity</button>
-        <button>Followers</button>
+      <div className="flex border-b pb-4 gap-6 mb-6 mt-[10%] justify-center md:text-xl">
+        <Tabs type={type} setType={setType} />
       </div>
+      {loading && <Loading />}
+      {type === "repos" && (
+        <div className="grid md:grid-cols-2 grid-cols-1 gap-7 w-10/12 mx-auto">
+          {info && <Repo repos={info} />}
+        </div>
+      )}
+      {type === "received_events" && (
+        <div className="grid md:grid-cols-2 grid-cols-1 gap-7 w-10/12 mx-auto">
+          {info && <Events events={info} />}
+        </div>
+      )}
+      {type === "followers" && (
+        <div>
+          <UserContainer users={info} />
+        </div>
+      )}
     </div>
   );
 };
